@@ -1,0 +1,258 @@
+/* ================= GLOBAL ================= */
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f6f7fb;
+  color: #1f2937;
+}
+
+/* ================= HEADER ================= */
+.header {
+  background: linear-gradient(90deg, #6a7cff, #7b4fa3);
+  padding: 28px 48px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header .title span {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.header p {
+  margin-top: 6px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.status {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ================= LAYOUT ================= */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 48px;
+  padding: 48px;
+}
+
+/* ================= LEFT PANEL ================= */
+.left {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= TABS ================= */
+.tabs {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.tabs button {
+  border: none;
+  background: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  padding-bottom: 8px;
+}
+
+.tabs button.active {
+  color: #4f46e5;
+  border-bottom: 3px solid #4f46e5;
+}
+
+/* ================= SECTION TITLES ================= */
+.left h3,
+.right h3 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* ================= UPLOAD BOX ================= */
+.upload-box {
+  border: 2px dashed #4f46e5;
+  border-radius: 16px;
+  height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin-bottom: 26px;
+}
+
+.upload-box div {
+  text-align: center;
+}
+
+.upload-box p {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.upload-box:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+
+/* ================= SLIDER ================= */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.slider label {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 90px;
+}
+
+.slider input {
+  flex: 1;
+}
+
+.slider span {
+  font-weight: 600;
+  color: #4f46e5;
+  min-width: 45px;
+  text-align: right;
+}
+
+/* ================= BUTTON ================= */
+.detect-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #6a7cff, #7b4fa3);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.detect-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+}
+
+.detect-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ================= RIGHT PANEL ================= */
+.right {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= STATS ================= */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.stat {
+  background: linear-gradient(180deg, #f8fafc, #eef2f7);
+  padding: 18px 12px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 26px;
+  margin-top: 6px;
+}
+
+/* ================= RESULT BOX ================= */
+.result-box {
+  background: white;
+  padding: 24px;
+  border-radius: 18px;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.result-box img,
+.result-box video,
+.result-box canvas {
+  max-width: 100%;
+  border-radius: 14px;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1100px) {
+  .container {
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .header .title span {
+    font-size: 24px;
+  }
+
+  .container {
+    padding: 16px;
+    gap: 24px;
+  }
+
+  .tabs {
+    gap: 16px;
+  }
+
+  .tabs button {
+    font-size: 14px;
+  }
+
+  .detect-btn {
+    padding: 14px;
+    font-size: 16px;
+  }
+}

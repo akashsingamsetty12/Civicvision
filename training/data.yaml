@@ -1,0 +1,9 @@
+path: /content/datasetfinal
+
+train: images/train
+
+nc: 3
+names:
+  0: pothole
+  1: plastic
+  2: otherlitter

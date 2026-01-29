@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Roadside Pothole and Litter Detection</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header class="header">
+  <div class="title">
+    🛣️ <span>Roadside Pothole and Litter Detection</span>
+    <p> AI-powered detection of potholes and roadside litter</p>
+  </div>
+  <div class="status">✔ Model Ready</div>
+</header>
+
+<main class="container">
+
+<section class="left">
+
+<div class="tabs">
+  <button id="imgTab" class="active">📷 Image</button>
+  <button id="vidTab">🎥 Video</button>
+  <button id="liveTab">📹 Live Webcam</button>
+</div>
+
+<div id="image-section">
+  <h3>Image Detection</h3>
+  <form id="imageForm">
+    <label class="upload-box">
+      <input type="file" name="file" hidden required />
+      <div class="upload-text">
+        ⬆️<p id="imageFileName">Click to upload image</p>
+      </div>
+    </label>
+
+    <div class="slider">
+      Confidence:
+      <input type="range" id="imageConf" min="0.1" max="1" step="0.05" value="0.5">
+      <span id="imageConfValue">0.50</span>
+    </div>
+
+    <button class="detect-btn">🔍 Detect Image</button>
+
+    <!-- Progress Bar -->
+    <div id="imageProgressContainer" style="display: none; margin-top: 15px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span style="font-size: 0.9em; color: #374151;" id="imageProgressText">Processing...</span>
+        <span id="imageProgressPercent" style="font-size: 0.9em; color: #0ea5e9; font-weight: 600;">0%</span>
+      </div>
+      <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 10px; overflow: hidden;">
+        <div id="imageProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #0EA5E9, #06B6D4); transition: width 0.1s ease; border-radius: 10px;"></div>
+      </div>
+      <div style="font-size: 0.85em; color: #666; margin-top: 5px; text-align: right;">
+        <span id="imageEstimatedTime"></span>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div id="video-section" style="display:none">
+  <h3>Video Detection</h3>
+  <form id="videoForm">
+    <label class="upload-box">
+      <input type="file" name="file" hidden required />
+      <div class="upload-text">
+        ⬆️<p id="videoFileName">Click to upload video</p>
+      </div>
+    </label>
+
+    <div class="slider">
+      Confidence:
+      <input type="range" id="videoConf" min="0.1" max="1" step="0.05" value="0.5">
+      <span id="videoConfValue">0.50</span>
+    </div>
+
+    <button class="detect-btn">🎥 Detect Video</button>
+
+    <!-- Progress Bar -->
+    <div id="videoProgressContainer" style="display: none; margin-top: 15px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <span style="font-size: 0.9em; color: #374151;" id="videoProgressText">Processing...</span>
+        <span id="videoProgressPercent" style="font-size: 0.9em; color: #0ea5e9; font-weight: 600;">0%</span>
+      </div>
+      <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 10px; overflow: hidden;">
+        <div id="videoProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #0EA5E9, #06B6D4); transition: width 0.1s ease; border-radius: 10px;"></div>
+      </div>
+      <div style="font-size: 0.85em; color: #666; margin-top: 5px; text-align: right;">
+        <span id="videoEstimatedTime"></span>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div id="live-section" style="display:none">
+  <h3>Live Webcam</h3>
+  <button id="startWebcamBtn" class="detect-btn">📷 Start Webcam</button>
+  <button id="stopWebcamBtn" class="detect-btn" style="display:none;background:#dc2626">⏹ Stop</button>
+  <video id="liveVideo" autoplay muted style="width:100%;margin-top:20px"></video>
+  <canvas id="liveCanvas" style="display:none;width:100%"></canvas>
+</div>
+
+</section>
+
+<section class="right">
+<h3>Results</h3>
+
+<div class="stats">
+  <div class="stat">Potholes<strong id="potholeCount">0</strong></div>
+  <div class="stat">Plastic<strong id="plasticCount">0</strong></div>
+  <div class="stat">Other Litter<strong id="litterCount">0</strong></div>
+</div>
+
+<div class="result-box">
+  <img id="imageResult" style="display:none;width:100%">
+  <video id="videoResult" controls style="display:none;width:100%"></video>
+  <canvas id="liveResultCanvas" style="display:none;width:100%"></canvas>
+</div>
+
+</section>
+</main>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
