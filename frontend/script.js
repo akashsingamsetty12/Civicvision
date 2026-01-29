@@ -1,6 +1,7 @@
 const imgTab = document.getElementById("imgTab");
 const vidTab = document.getElementById("vidTab");
 const liveTab = document.getElementById("liveTab");
+const BACKEND_URL = "https://civicvision.onrender.com";
 
 const imgSec = document.getElementById("image-section");
 const vidSec = document.getElementById("video-section");
@@ -21,7 +22,7 @@ function switchTab(sec){
   imageResult.style.display="none";
   videoResult.style.display="none";
   liveCanvas.style.display="none";
-  imageResult.src="";
+  imageResult.src = "";
   videoResult.src="";
   
   // Reset counts to 0
@@ -78,7 +79,7 @@ imageForm.onsubmit=async(e)=>{
   }, 100);
   
   try {
-    const res=await fetch("https://civicvision.onrender.com/detect/image",{method:"POST",body:fd});
+    const res=await fetch(`${BACKEND_URL}/detect/image`,{method:"POST",body:fd});
     const data=await res.json();
     
     clearInterval(updateInterval);
@@ -86,7 +87,7 @@ imageForm.onsubmit=async(e)=>{
     progressPercent.innerText = "100%";
     estimatedTime.innerText = "✅ Complete!";
     
-    imageResult.src=data.image_url+"?t="+Date.now();
+    imageResult.src = BACKEND_URL + data.image_url + "?t=" + Date.now();
     imageResult.style.display="block";
     videoResult.style.display="none";
     liveCanvas.style.display="none";
@@ -142,7 +143,7 @@ videoForm.onsubmit=async(e)=>{
   
   try {
     console.log("📤 Sending video to backend...");
-    const res=await fetch("https://civicvision.onrender.com/detect/video",{method:"POST",body:fd});
+    const res=await fetch(`${BACKEND_URL}/detect/video`,{method:"POST",body:fd});
     const data=await res.json();
     
     console.log("📥 Video response received:", data);
@@ -207,7 +208,7 @@ videoForm.onsubmit=async(e)=>{
     
     // Set src directly on video element (NOT using source tag)
     console.log("📥 Setting video src directly...");
-    videoElement.src = data.video_url;
+    videoElement.src = BACKEND_URL + data.video_url;
     videoElement.type = 'video/mp4';
     
     // Trigger load
@@ -272,11 +273,11 @@ async function liveLoop(){
   liveCanvas.toBlob(async(b)=>{
     const fd=new FormData();
     fd.append("file",b,"frame.jpg");
-    const res=await fetch("https://civicvision.onrender.com/detect/image",{method:"POST",body:fd});
+    const res=await fetch(`${BACKEND_URL}/detect/image`,{method:"POST",body:fd});
     const data=await res.json();
     const img=new Image();
     img.onload=()=>ctx.drawImage(img,0,0);
-    img.src=data.image_url+"?t="+Date.now();
+    img.src=BACKEND_URL + data.image_url+"?t="+Date.now();
     liveCanvas.style.display="block";
     setCounts(data.counts);
   });
