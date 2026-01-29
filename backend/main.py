@@ -24,12 +24,14 @@ app.add_middleware(
 )
 
 # Ensure output directory exists before mounting
-os.makedirs("/tmp/output", exist_ok=True)
+# Use persistent output directory
+output_base_dir = "frontend/static/output"
+os.makedirs(output_base_dir, exist_ok=True)
 
 # Serve model outputs at /static/output/<file>
 app.mount(
     "/static/output",
-    StaticFiles(directory="/tmp/output"),
+    StaticFiles(directory=output_base_dir),
     name="output",
 )
 
@@ -72,7 +74,7 @@ color_map = {
 }
 
 # Create output directory
-output_dir = "/tmp/output"
+output_dir = "frontend/static/output"
 os.makedirs(output_dir, exist_ok=True)
 
 # ---------------- HOME ----------------
@@ -192,13 +194,13 @@ async def detect_image(file: UploadFile = File(...), confidence: float = 0.5):
 
     annotated, counts = detect(img, confidence)
 
-    os.makedirs("/tmp/output", exist_ok=True)
+    os.makedirs("frontend/static/output", exist_ok=True)
     name = f"{uuid.uuid4().hex}.jpg"
-    path = f"/tmp/output/{name}"
+    path = f"frontend/static/output/{name}"
     cv2.imwrite(path, cv2.cvtColor(annotated, cv2.COLOR_RGB2BGR))
 
     return {
-        "image_url": f"https://civicvision.onrender.com/static/output/{name}",
+        "image_url": f"/static/output/{name}",
         "counts": counts
     }
 
@@ -222,7 +224,7 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         reader = imageio.get_reader(tmp.name)
         fps = reader.get_meta_data().get('fps', 30)
         
-        output_dir = "/tmp/output"
+        output_dir = "frontend/static/output"
         os.makedirs(output_dir, exist_ok=True)
         
         final_output = f"{output_dir}/{uuid.uuid4().hex}.mp4"
@@ -330,7 +332,7 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         
         os.remove(tmp.name)
         return {
-            "video_url": f"https://civicvision.onrender.com/static/output/{os.path.basename(final_output)}?t={uuid.uuid4().hex}",
+            "video_url": f"/static/output/{os.path.basename(final_output)}?t={uuid.uuid4().hex}",
             "counts": {
                 "pothole": len(seen_potholes),
                 "plastic": len(seen_plastic),
