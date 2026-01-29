@@ -36,26 +36,32 @@ Detection Results (Images / Videos)
 ```text
 Civicvision/
 ├── backend/
-│   └── main.py                   # FastAPI backend
+│   ├── main.py                   # FastAPI backend with YOLOv8 inference
+│   └── models/
+│       └── road.pt               # Trained YOLOv8 model
 ├── frontend/
 │   ├── index.html                # Web UI
-│   ├── script.js                 # Frontend logic
+│   ├── script.js                 # Frontend JavaScript logic
 │   ├── style.css                 # Styling
 │   └── static/
-│       └── output/               # Saved detection results
-├── models/
-│   └── road.pt                   # Trained YOLOv8 model
+│       └── output/               # Saved detection results (images/videos)
 ├── training/
-│   ├── data.yaml                 # YOLO dataset/config
-│   └── finalroaddetection.ipynb  # Training notebook
-├── Dockerfile
-├── requirements.txt
+│   ├── data.yaml                 # YOLO dataset configuration
+│   └── finalroaddetection.ipynb  # Google Colab training notebook
+├── Dockerfile                    # Container configuration
+├── requirements.txt              # Python dependencies
 └── README.md
 ```
 
+**Key paths:**
+- Backend app: `backend/main.py`
+- Model file: `backend/models/road.pt`
+- Frontend UI: `frontend/index.html`
+- Detection outputs: `frontend/static/output/`
+
 ## Model details
 
-The system uses a single unified YOLOv8 model: `models/road.pt`, trained on 3 classes.
+The system uses a single unified YOLOv8 model: `backend/models/road.pt`, trained on 3 classes.
 
 | Class ID | Class name    |
 |---------:|---------------|
@@ -191,7 +197,7 @@ Returns the frontend UI.
 
 Confirm the file exists:
 
-- `models/road.pt`
+- `backend/models/road.pt`
 
 ### Port already in use
 
