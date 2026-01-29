@@ -25,7 +25,7 @@ app.add_middleware(
 
 # Ensure output directory exists before mounting
 # Use persistent output directory
-output_base_dir = "/tmp/outputs"  # Local persistent directory for outputs
+output_base_dir = "outputs"  # Local persistent directory for outputs
 os.makedirs(output_base_dir, exist_ok=True)
 
 # Serve model outputs at /static/output/<file>
@@ -75,7 +75,7 @@ color_map = {
 }
 
 # Create output directory
-output_dir = "/tmp/outputs"
+output_dir = "outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 # ---------------- INFERENCE ----------------
@@ -220,7 +220,7 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         reader = imageio.get_reader(tmp.name)
         fps = reader.get_meta_data().get('fps', 30)
         
-        output_dir = "/tmp/outputs"
+        output_dir = "outputs"
         os.makedirs(output_dir, exist_ok=True)
         
         final_output = f"{output_dir}/{uuid.uuid4().hex}.mp4"
