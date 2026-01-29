@@ -78,7 +78,7 @@ imageForm.onsubmit=async(e)=>{
   }, 100);
   
   try {
-    const res=await fetch("/detect/image",{method:"POST",body:fd});
+    const res=await fetch("https://civicvision.onrender.com/detect/image",{method:"POST",body:fd});
     const data=await res.json();
     
     clearInterval(updateInterval);
@@ -142,7 +142,7 @@ videoForm.onsubmit=async(e)=>{
   
   try {
     console.log("📤 Sending video to backend...");
-    const res=await fetch("/detect/video",{method:"POST",body:fd});
+    const res=await fetch("https://civicvision.onrender.com/detect/video",{method:"POST",body:fd});
     const data=await res.json();
     
     console.log("📥 Video response received:", data);
@@ -269,7 +269,7 @@ async function liveLoop(){
   liveCanvas.toBlob(async(b)=>{
     const fd=new FormData();
     fd.append("file",b,"frame.jpg");
-    const res=await fetch("/detect/image",{method:"POST",body:fd});
+    const res=await fetch("https://civicvision.onrender.com/detect/image",{method:"POST",body:fd});
     const data=await res.json();
     const img=new Image();
     img.onload=()=>ctx.drawImage(img,0,0);
