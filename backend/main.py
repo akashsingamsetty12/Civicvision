@@ -14,10 +14,10 @@ import imageio
 
 app = FastAPI(title="Road Defect Detection System")
 
-# Add CORS middleware
+# Add CORS middleware for frontend (Vercel) to access this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,7 +25,7 @@ app.add_middleware(
 
 # Ensure output directory exists before mounting
 # Use persistent output directory
-output_base_dir = "frontend/static/output"
+output_base_dir = "./outputs"  # Local persistent directory for outputs
 os.makedirs(output_base_dir, exist_ok=True)
 
 # Serve model outputs at /static/output/<file>
@@ -35,8 +35,9 @@ app.mount(
     name="output",
 )
 
-# Serve frontend assets (style.css, script.js) at /static/<file>
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+# NOTE: Frontend is deployed separately to Vercel
+# Backend is API-only. Do NOT serve frontend static files here.
+# Frontend will call this backend API at https://your-backend.onrender.com
 
 # ---------------- DEVICE ----------------
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -49,7 +50,7 @@ if device == "cuda":
 
 # ---------------- MODELS ----------------
 # Load model with FP16 half precision for faster inference
-road_model = YOLO("backend/models/road.pt")
+road_model = YOLO("models/road.pt")
 road_model.to(device)
 
 # Enable inference optimization
@@ -74,13 +75,8 @@ color_map = {
 }
 
 # Create output directory
-output_dir = "frontend/static/output"
+output_dir = "/tmp/output"
 os.makedirs(output_dir, exist_ok=True)
-
-# ---------------- HOME ----------------
-@app.get("/", response_class=HTMLResponse)
-def home():
-    return FileResponse("frontend/index.html")
 
 # ---------------- INFERENCE ----------------
 def calculate_iou(box1, box2):
@@ -194,13 +190,13 @@ async def detect_image(file: UploadFile = File(...), confidence: float = 0.5):
 
     annotated, counts = detect(img, confidence)
 
-    os.makedirs("frontend/static/output", exist_ok=True)
+    os.makedirs("./outputs", exist_ok=True)
     name = f"{uuid.uuid4().hex}.jpg"
-    path = f"frontend/static/output/{name}"
+    path = f"./outputs/{name}"
     cv2.imwrite(path, cv2.cvtColor(annotated, cv2.COLOR_RGB2BGR))
 
     return {
-        "image_url": f"/static/output/{name}",
+        "image_url": f"https://civicvision.onrender.com/static/output/{name}",
         "counts": counts
     }
 
@@ -224,7 +220,7 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         reader = imageio.get_reader(tmp.name)
         fps = reader.get_meta_data().get('fps', 30)
         
-        output_dir = "frontend/static/output"
+        output_dir = "./outputs"
         os.makedirs(output_dir, exist_ok=True)
         
         final_output = f"{output_dir}/{uuid.uuid4().hex}.mp4"
@@ -332,7 +328,7 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         
         os.remove(tmp.name)
         return {
-            "video_url": f"/static/output/{os.path.basename(final_output)}?t={uuid.uuid4().hex}",
+            "video_url": f"https://civicvision.onrender.com/static/output/{os.path.basename(final_output)}?t={uuid.uuid4().hex}",
             "counts": {
                 "pothole": len(seen_potholes),
                 "plastic": len(seen_plastic),
