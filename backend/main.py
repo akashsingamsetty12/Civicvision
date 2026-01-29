@@ -17,11 +17,17 @@ app = FastAPI(title="Road Defect Detection System")
 # Add CORS middleware for frontend (Vercel) to access this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
+    allow_origins=[
+        "https://civicvision.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:5500"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
 
 # Ensure output directory exists before mounting
 # Use persistent output directory
