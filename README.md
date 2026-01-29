@@ -38,10 +38,10 @@ Civicvision/
 ├── backend/
 │   └── main.py                   # FastAPI backend
 ├── frontend/
+│   ├── index.html                # Web UI
+│   ├── script.js                 # Frontend logic
+│   ├── style.css                 # Styling
 │   └── static/
-│       ├── index.html            # Web UI
-│       ├── script.js             # Frontend logic
-│       ├── style.css             # Styling
 │       └── output/               # Saved detection results
 ├── models/
 │   └── road.pt                   # Trained YOLOv8 model

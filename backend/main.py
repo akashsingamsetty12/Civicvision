@@ -26,8 +26,15 @@ app.add_middleware(
 # Ensure output directory exists before mounting
 os.makedirs("frontend/static/output", exist_ok=True)
 
-# Mount static files with correct MIME types
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+# Serve model outputs at /static/output/<file>
+app.mount(
+    "/static/output",
+    StaticFiles(directory="frontend/static/output"),
+    name="output",
+)
+
+# Serve frontend assets (style.css, script.js) at /static/<file>
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 # ---------------- DEVICE ----------------
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -71,7 +78,7 @@ os.makedirs(output_dir, exist_ok=True)
 # ---------------- HOME ----------------
 @app.get("/", response_class=HTMLResponse)
 def home():
-    return FileResponse("frontend/static/index.html")
+    return FileResponse("frontend/index.html")
 
 # ---------------- INFERENCE ----------------
 def calculate_iou(box1, box2):
