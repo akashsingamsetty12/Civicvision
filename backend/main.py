@@ -209,6 +209,10 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
     Process video frames with detection and save as MP4 using imageio
     Ensures all frames have consistent dimensions
     """
+    seen_potholes = set()
+    seen_plastic = set()
+    seen_litter = set()
+
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     tmp.write(await file.read())
     tmp.close()
@@ -258,9 +262,23 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
                 else:
                     frame_bgr = frame
                 
-                annotated, counts = detect(frame_bgr, confidence)
-                for k in total:
-                    total[k] += counts[k]
+                result = road_model.track(frame_bgr, conf=confidence, persist=True)[0]
+                annotated = result.plot()
+                class_names = road_model.names
+
+                for box in result.boxes:
+                    if box.id is None:
+                        continue
+                    obj_id = int(box.id[0])
+                    class_id = int(box.cls[0])
+                    class_name = class_names[class_id]
+
+                    if class_name == "pothole":
+                        seen_potholes.add(obj_id)
+                    elif class_name == "plastic":
+                        seen_plastic.add(obj_id)
+                    else:
+                        seen_litter.add(obj_id)
                 
                 # Ensure annotated frame is resized to target dimensions
                 annotated = cv2.resize(annotated, (target_width, target_height))
@@ -311,10 +329,13 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         print(f"✅ Video saved successfully to: {final_output}")
         
         os.remove(tmp.name)
-
         return {
             "video_url": f"/static/output/{os.path.basename(final_output)}?t={uuid.uuid4().hex}",
-            "counts": total
+            "counts": {
+                "pothole": len(seen_potholes),
+                "plastic": len(seen_plastic),
+                "otherlitter": len(seen_litter)
+            }
         }
 
     except Exception as e:

@@ -247,7 +247,10 @@ videoForm.file.onchange=(e)=>{
 /* LIVE */
 let stream=null;
 startWebcamBtn.onclick=async()=>{
-  stream=await navigator.mediaDevices.getUserMedia({video:true});
+  stream = await navigator.mediaDevices.getUserMedia({
+  video: { facingMode: "environment" }
+  });
+
   liveVideo.srcObject=stream;
   startWebcamBtn.style.display="none";
   stopWebcamBtn.style.display="block";
