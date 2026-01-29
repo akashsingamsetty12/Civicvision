@@ -232,12 +232,12 @@ async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
         final_output = f"{output_dir}/{uuid.uuid4().hex}.mp4"
         
         # Target frame size (must be divisible by 16 for codec compatibility)
-        target_width = 640
-        target_height = 368  # Divisible by 16 for H.264 codec
+        target_width = 480
+        target_height = 272  # Divisible by 16 for H.264 codec
         
         total = {"pothole": 0, "plastic": 0, "otherlitter": 0}
         frame_count = 0
-        frame_skip = 2
+        frame_skip = 10
         
         print(f"✅ Processing video at {fps} FPS")
         print(f"✅ Target frame size: {target_width}x{target_height}")
