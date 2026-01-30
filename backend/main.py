@@ -1,7 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
+import streamlit as st
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -12,344 +9,173 @@ import os
 import uuid
 import imageio
 
-app = FastAPI(title="Road Defect Detection System")
+st.markdown("""
+<style>
 
-# Add CORS middleware for frontend (Vercel) to access this API
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://civicvision.vercel.app",
-        "http://localhost:3000",
-        "http://127.0.0.1:5500"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"]
-)
+/* Background */
+.stApp {
+    background: #f6f7fb;
+}
 
+/* Header title */
+h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #4f46e5;
+}
 
-# Ensure output directory exists before mounting
-# Use persistent output directory
-output_base_dir = "outputs"  # Local persistent directory for outputs
-os.makedirs(output_base_dir, exist_ok=True)
+/* Tabs */
+div[data-testid="stTabs"] button {
+    font-size: 16px;
+    font-weight: 600;
+    color: #6b7280;
+}
 
-# Serve model outputs at /static/output/<file>
-app.mount(
-    "/static/output",
-    StaticFiles(directory=output_base_dir),
-    name="output",
-)
+div[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #4f46e5;
+    border-bottom: 3px solid #4f46e5;
+}
 
-# NOTE: Frontend is deployed separately to Vercel
-# Backend is API-only. Do NOT serve frontend static files here.
-# Frontend will call this backend API at https://your-backend.onrender.com
+/* Buttons */
+button[kind="primary"] {
+    width: 100%;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #6a7cff, #7b4fa3);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Upload box */
+div[data-testid="stFileUploader"] {
+    border: 2px dashed #4f46e5;
+    border-radius: 16px;
+    padding: 25px;
+    background: white;
+}
+
+/* Metrics */
+div[data-testid="stMetric"] {
+    background: linear-gradient(180deg, #f8fafc, #eef2f7);
+    padding: 16px;
+    border-radius: 14px;
+}
+
+/* Images & video */
+img, video {
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+/* Hide Streamlit junk */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+</style>
+""", unsafe_allow_html=True)
+
+st.set_page_config(page_title="Road Defect Detection", layout="wide")
+st.title("🚧 Road Defect Detection System")
 
 # ---------------- DEVICE ----------------
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using device:", device)
+st.write("Using device:", device)
 
-# Enable GPU memory optimization
-if device == "cuda":
-    torch.cuda.set_per_process_memory_fraction(0.9)
-    torch.cuda.empty_cache()
+# ---------------- MODEL ----------------
+@st.cache_resource
+def load_model():
+    model = YOLO("models/road.pt")
+    model.to(device)
+    model.fuse()
+    return model
 
-# ---------------- MODELS ----------------
-# Load model with FP16 half precision for faster inference
-road_model = YOLO("backend/models/road.pt")
-road_model.to(device)
+road_model = load_model()
 
-# Enable inference optimization
-road_model.fuse()  # Fuse conv+bn layers for speed
-if device == "cuda":
-    road_model.half()  # Use FP16 for faster inference on GPU
-
-# Class name mapping (adjust based on your road.pt model's class names)
-class_mapping = {
-    "pothole": "pothole",
-    "plastic": "plastic",
-    "litter": "otherlitter",
-    "otherlitter": "otherlitter",
-    "trash": "otherlitter"
-}
-
-# Color mapping for visualization
+# ---------------- UTILS ----------------
 color_map = {
-    "pothole": (255, 0, 0),      # Blue
-    "plastic": (0, 0, 255),      # Red
-    "otherlitter": (0, 255, 0)   # Green
+    "pothole": (255, 0, 0),
+    "plastic": (0, 0, 255),
+    "otherlitter": (0, 255, 0)
 }
-
-# Create output directory
-output_dir = "outputs"
-os.makedirs(output_dir, exist_ok=True)
-
-# ---------------- INFERENCE ----------------
-def calculate_iou(box1, box2):
-    """Calculate Intersection over Union (IoU) between two boxes"""
-    x1_min, y1_min, x1_max, y1_max = box1
-    x2_min, y2_min, x2_max, y2_max = box2
-    
-    # Calculate intersection area
-    inter_xmin = max(x1_min, x2_min)
-    inter_ymin = max(y1_min, y2_min)
-    inter_xmax = min(x1_max, x2_max)
-    inter_ymax = min(y1_max, y2_max)
-    
-    if inter_xmax < inter_xmin or inter_ymax < inter_ymin:
-        return 0.0
-    
-    inter_area = (inter_xmax - inter_xmin) * (inter_ymax - inter_ymin)
-    
-    # Calculate union area
-    box1_area = (x1_max - x1_min) * (y1_max - y1_min)
-    box2_area = (x2_max - x2_min) * (y2_max - y2_min)
-    union_area = box1_area + box2_area - inter_area
-    
-    return inter_area / union_area if union_area > 0 else 0.0
-
-def deduplicate_detections(boxes_data, iou_threshold=0.3):
-    """Remove duplicate detections with same class and overlapping boxes"""
-    if not boxes_data:
-        return []
-    
-    # Sort by confidence score (descending)
-    sorted_boxes = sorted(boxes_data, key=lambda x: x['conf'], reverse=True)
-    keep_boxes = []
-    
-    for i, box_data in enumerate(sorted_boxes):
-        is_duplicate = False
-        
-        # Check against already kept boxes
-        for kept_box in keep_boxes:
-            # Only check if same category
-            if kept_box['category'] == box_data['category']:
-                iou = calculate_iou(
-                    (box_data['x1'], box_data['y1'], box_data['x2'], box_data['y2']),
-                    (kept_box['x1'], kept_box['y1'], kept_box['x2'], kept_box['y2'])
-                )
-                # If IoU is high and same class, it's a duplicate
-                if iou > iou_threshold:
-                    is_duplicate = True
-                    break
-        
-        if not is_duplicate:
-            keep_boxes.append(box_data)
-    
-    return keep_boxes
 
 def detect(image, conf):
     image = cv2.resize(image, (640, 640))
-    
     counts = {"pothole": 0, "plastic": 0, "otherlitter": 0}
-    
-    # Use agnostic NMS and faster processing
-    result = road_model(image, conf=conf, imgsz=640, verbose=False)[0]
-    
-    # Get class names from the model
-    class_names = road_model.names  # Returns dict of {class_id: class_name}
-    
-    # Collect all detections first
-    boxes_data = []
+
+    result = road_model(image, conf=conf)[0]
+    class_names = road_model.names
+
     for box in result.boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         c = float(box.conf[0])
         class_id = int(box.cls[0])
-        class_name = class_names.get(class_id, "unknown")
-        
-        # Map detected class to our category
-        category = class_mapping.get(class_name.lower(), "otherlitter")
-        
-        boxes_data.append({
-            'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2,
-            'conf': c,
-            'class_name': class_name,
-            'category': category
-        })
-    
-    # Remove duplicate detections with higher threshold for speed
-    unique_boxes = deduplicate_detections(boxes_data, iou_threshold=0.4)
-    
-    # Draw unique detections and count
-    for box_data in unique_boxes:
-        x1, y1, x2, y2 = box_data['x1'], box_data['y1'], box_data['x2'], box_data['y2']
-        c = box_data['conf']
-        category = box_data['category']
-        
+        class_name = class_names[class_id].lower()
+
+        category = class_name if class_name in counts else "otherlitter"
         counts[category] += 1
-        
-        # Get color for this category
-        color = color_map.get(category, (128, 128, 128))
-        
-        cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(image, f"{category} {c:.2f}",
-                    (x1, y1 - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-    
+
+        color = color_map.get(category, (255,255,255))
+        cv2.rectangle(image,(x1,y1),(x2,y2),color,2)
+        cv2.putText(image,f"{category} {c:.2f}",
+                    (x1,y1-5),cv2.FONT_HERSHEY_SIMPLEX,0.6,color,2)
+
     return image, counts
 
-# ---------------- IMAGE ----------------
-@app.post("/detect/image")
-async def detect_image(file: UploadFile = File(...), confidence: float = 0.5):
-    img = Image.open(file.file).convert("RGB")
-    img = np.array(img)
+# ---------------- UI ----------------
+tab1, tab2 = st.tabs(["🖼 Image", "🎥 Video"])
 
-    annotated, counts = detect(img, confidence)
+# IMAGE TAB
+with tab1:
+    st.subheader("Upload Image")
+    img_file = st.file_uploader("Choose image", type=["jpg","png","jpeg"])
+    conf = st.slider("Confidence",0.1,1.0,0.5)
 
-    os.makedirs(output_base_dir, exist_ok=True)
-    name = f"{uuid.uuid4().hex}.jpg"
-    path = f"{output_base_dir}/{name}"
-    cv2.imwrite(path, cv2.cvtColor(annotated, cv2.COLOR_RGB2BGR))
+    if img_file:
+        img = Image.open(img_file).convert("RGB")
+        img = np.array(img)
 
-    return {
-        "image_url": f"https://civicvision.onrender.com/static/output/{name}",
-        "counts": counts
-    }
+        if st.button("Detect Image"):
+            with st.spinner("Detecting..."):
+                annotated, counts = detect(img, conf)
+                st.image(annotated, channels="BGR")
+                st.json(counts)
 
-# ---------------- VIDEO ----------------
-@app.post("/detect/video")
-async def detect_video(file: UploadFile = File(...), confidence: float = 0.5):
-    """
-    Process video frames with detection and save as MP4 using imageio
-    Ensures all frames have consistent dimensions
-    """
-    seen_potholes = set()
-    seen_plastic = set()
-    seen_litter = set()
+# VIDEO TAB
+with tab2:
+    st.subheader("Upload Video")
+    vid_file = st.file_uploader("Choose video", type=["mp4","mov","avi"])
+    conf = st.slider("Confidence",0.1,1.0,0.5, key="vconf")
 
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    tmp.write(await file.read())
-    tmp.close()
+    if vid_file:
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        tmp.write(vid_file.read())
 
-    try:
-        # Read video with imageio
-        reader = imageio.get_reader(tmp.name)
-        fps = reader.get_meta_data().get('fps', 30)
-        
-        output_dir = "outputs"
-        os.makedirs(output_dir, exist_ok=True)
-        
-        final_output = f"{output_dir}/{uuid.uuid4().hex}.mp4"
-        
-        # Target frame size (must be divisible by 16 for codec compatibility)
-        target_width = 480
-        target_height = 272  # Divisible by 16 for H.264 codec
-        
-        total = {"pothole": 0, "plastic": 0, "otherlitter": 0}
-        frame_count = 0
-        frame_skip = 10
-        
-        print(f"✅ Processing video at {fps} FPS")
-        print(f"✅ Target frame size: {target_width}x{target_height}")
+        if st.button("Detect Video"):
+            with st.spinner("Processing video..."):
+                reader = imageio.get_reader(tmp.name)
+                fps = reader.get_meta_data().get('fps',30)
+                out_path = f"outputs/{uuid.uuid4().hex}.mp4"
+                os.makedirs("outputs", exist_ok=True)
 
-        # Collect all frames first
-        all_frames = []
-        
-        for frame_idx, frame in enumerate(reader):
-            frame_count += 1
-            
-            # Ensure frame is resized to exactly target size
-            frame = cv2.resize(frame, (target_width, target_height))
-            
-            # Verify frame is RGB
-            if len(frame.shape) != 3 or frame.shape[2] not in [3, 4]:
-                print(f"⚠️  Warning: Frame {frame_idx} has unexpected shape: {frame.shape}")
-                continue
-            
-            # Process every frame_skip-th frame for detection
-            if frame_count % frame_skip == 0:
-                # Convert to BGR for detect function if needed
-                if frame.shape[2] == 4:  # RGBA
-                    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-                elif frame.shape[2] == 3:  # RGB
-                    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                else:
-                    frame_bgr = frame
-                
-                result = road_model.track(frame_bgr, conf=confidence, persist=True)[0]
-                annotated = result.plot()
-                class_names = road_model.names
+                writer = imageio.get_writer(out_path, fps=fps)
 
-                for box in result.boxes:
-                    if box.id is None:
-                        continue
-                    obj_id = int(box.id[0])
-                    class_id = int(box.cls[0])
-                    class_name = class_names[class_id]
+                counts = {"pothole":0,"plastic":0,"otherlitter":0}
 
-                    if class_name == "pothole":
-                        seen_potholes.add(obj_id)
-                    elif class_name == "plastic":
-                        seen_plastic.add(obj_id)
-                    else:
-                        seen_litter.add(obj_id)
-                
-                # Ensure annotated frame is resized to target dimensions
-                annotated = cv2.resize(annotated, (target_width, target_height))
-                
-                # Convert to RGB for imageio output
-                output_frame = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
-            else:
-                # Keep unprocessed frame as RGB
-                if frame.shape[2] == 4:  # RGBA
-                    output_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
-                elif frame.shape[2] == 3:  # RGB
-                    output_frame = frame
-                else:
-                    output_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                    output_frame = cv2.cvtColor(output_frame, cv2.COLOR_BGR2RGB)
-            
-            # Final verification of frame size before adding
-            if output_frame.shape[0] != target_height or output_frame.shape[1] != target_width:
-                print(f"⚠️  Resizing frame {frame_idx} from {output_frame.shape} to target {target_height}x{target_width}")
-                output_frame = cv2.resize(output_frame, (target_width, target_height))
-            
-            all_frames.append(output_frame.astype('uint8'))
-        
-        reader.close()
-        
-        print(f"✅ Processed {len(all_frames)} frames")
-        print(f"✅ Verifying all frames are {target_width}x{target_height}...")
-        
-        # Verify all frames have same dimensions
-        for i, frame in enumerate(all_frames):
-            if frame.shape != (target_height, target_width, 3):
-                print(f"❌ Frame {i} has wrong shape: {frame.shape}, expected ({target_height}, {target_width}, 3)")
-                # Force correct dimensions
-                all_frames[i] = cv2.resize(frame, (target_width, target_height))
-        
-        print(f"✅ Now encoding {len(all_frames)} frames to MP4...")
-        
-        # Write all frames to MP4 with verified dimensions
-        writer = imageio.get_writer(final_output, fps=fps, codec='libx264', pixelformat='yuv420p')
-        for idx, frame in enumerate(all_frames):
-            try:
-                writer.append_data(frame)
-            except Exception as e:
-                print(f"❌ Error writing frame {idx}: {e}")
-                raise
-        writer.close()
-        
-        print(f"✅ Video saved successfully to: {final_output}")
-        
-        os.remove(tmp.name)
-        return {
-            "video_url": f"https://civicvision.onrender.com/static/output/{os.path.basename(final_output)}?t={uuid.uuid4().hex}",
-            "counts": {
-                "pothole": len(seen_potholes),
-                "plastic": len(seen_plastic),
-                "otherlitter": len(seen_litter)
-            }
-        }
+                for frame in reader:
+                    frame = cv2.resize(frame,(640,480))
+                    result = road_model(frame, conf=conf)[0]
+                    annotated = result.plot()
+                    writer.append_data(cv2.cvtColor(annotated,cv2.COLOR_BGR2RGB))
 
-    except Exception as e:
-        print(f"❌ Video error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        if os.path.exists(tmp.name):
-            os.remove(tmp.name)
-        return {"error": str(e)}
+                    for box in result.boxes:
+                        cls = int(box.cls[0])
+                        name = road_model.names[cls].lower()
+                        if name in counts:
+                            counts[name]+=1
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+                writer.close()
+                reader.close()
+
+                st.video(out_path)
+                st.json(counts)
