@@ -1,12 +1,23 @@
 fastapi
 uvicorn
-opencv-python
-numpy
-ultralytics
+
+opencv-python-headless
+numpy==1.26.4
 pillow
 python-multipart
 imageio
 imageio-ffmpeg
 
-torch==2.0.0+cpu
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
 -f https://download.pytorch.org/whl/torch_stable.html
+
+requests
+pyyaml
+matplotlib
+tqdm
+scipy
+psutil
+pandas
+seaborn
+thop

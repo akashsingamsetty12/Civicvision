@@ -44,15 +44,21 @@ vidTab.onclick=()=>switchTab(vidSec);
 liveTab.onclick=()=>switchTab(liveSec);
 
 function setCounts(c){
-  potholeCount.innerText=c.pothole;
-  plasticCount.innerText=c.plastic;
-  litterCount.innerText=c.otherlitter;
+  if(!c){
+    console.error("No counts received", c);
+    return;
+  }
+  potholeCount.innerText = c.pothole || 0;
+  plasticCount.innerText = c.plastic || 0;
+  litterCount.innerText = c.otherlitter || 0;
 }
+
 
 /* IMAGE */
 imageForm.onsubmit=async(e)=>{
   e.preventDefault();
   const fd=new FormData(imageForm);
+  fd.append("conf", document.getElementById("imageConf").value);
   
   const progressContainer = document.getElementById("imageProgressContainer");
   const progressBar = document.getElementById("imageProgressBar");
@@ -80,6 +86,12 @@ imageForm.onsubmit=async(e)=>{
   
   try {
     const res=await fetch(`${BACKEND_URL}/detect/image`,{method:"POST",body:fd});
+    
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error(text);
+    }
+    
     const data=await res.json();
     
     clearInterval(updateInterval);
@@ -117,6 +129,7 @@ imageForm.file.onchange=(e)=>{
 videoForm.onsubmit=async(e)=>{
   e.preventDefault();
   const fd=new FormData(videoForm);
+  fd.append("conf", document.getElementById("videoConf").value);
   
   const progressContainer = document.getElementById("videoProgressContainer");
   const progressBar = document.getElementById("videoProgressBar");
@@ -144,6 +157,12 @@ videoForm.onsubmit=async(e)=>{
   try {
     console.log("📤 Sending video to backend...");
     const res=await fetch(`${BACKEND_URL}/detect/video`,{method:"POST",body:fd});
+    
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error(text);
+    }
+    
     const data=await res.json();
     
     console.log("📥 Video response received:", data);
@@ -274,6 +293,12 @@ async function liveLoop(){
     const fd=new FormData();
     fd.append("file",b,"frame.jpg");
     const res=await fetch(`${BACKEND_URL}/detect/image`,{method:"POST",body:fd});
+    
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error(text);
+    }
+    
     const data=await res.json();
     const img=new Image();
     img.onload=()=>ctx.drawImage(img,0,0);
