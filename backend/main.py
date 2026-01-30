@@ -56,7 +56,7 @@ if device == "cuda":
 
 # ---------------- MODELS ----------------
 # Load model with FP16 half precision for faster inference
-road_model = YOLO("models/road.pt")
+road_model = YOLO("backend/models/road.pt")
 road_model.to(device)
 
 # Enable inference optimization
