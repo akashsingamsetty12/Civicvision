@@ -1,11 +1,13 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import cv2, uuid, os
 import numpy as np
 from ultralytics import YOLO
-import torch
 import imageio
+
+# Force CPU (Railway has no GPU)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 app = FastAPI(title="Road Defect Detection System")
 
@@ -28,12 +30,10 @@ def home():
 app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 
 # ---------------- LOAD MODEL ----------------
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print("Using device:", device)
-
+print("Loading model on CPU...")
 model = YOLO(MODEL_PATH)
-model.to(device)
-model.fuse()
+model.to("cpu")
+print("Model loaded.")
 
 # ---------------- IMAGE DETECTION ----------------
 def detect_frame(frame, conf):
@@ -53,68 +53,81 @@ def detect_frame(frame, conf):
 
 @app.post("/detect/image")
 async def detect_image(file: UploadFile = File(...), conf: float = 0.5):
-    img = np.frombuffer(await file.read(), np.uint8)
-    img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+    try:
+        img = np.frombuffer(await file.read(), np.uint8)
+        img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+        if img is None:
+            raise ValueError("Invalid image file")
 
-    annotated, counts = detect_frame(img, conf)
+        annotated, counts = detect_frame(img, conf)
 
-    out_name = f"{uuid.uuid4().hex}.jpg"
-    out_path = os.path.join(OUTPUT_DIR, out_name)
-    cv2.imwrite(out_path, annotated)
+        out_name = f"{uuid.uuid4().hex}.jpg"
+        out_path = os.path.join(OUTPUT_DIR, out_name)
+        cv2.imwrite(out_path, annotated)
 
-    return {
-        "image_url": "/outputs/" + out_name,
-        "counts": counts
-    }
+        return {
+            "image_url": "/outputs/" + out_name,
+            "counts": counts
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------- VIDEO DETECTION (NO DUPLICATES) ----------------
 @app.post("/detect/video")
 async def detect_video(file: UploadFile = File(...), conf: float = 0.5):
-    temp = os.path.join(OUTPUT_DIR, f"{uuid.uuid4().hex}_in.mp4")
-    with open(temp, "wb") as f:
-        f.write(await file.read())
+    try:
+        temp = os.path.join(OUTPUT_DIR, f"{uuid.uuid4().hex}_in.mp4")
+        with open(temp, "wb") as f:
+            f.write(await file.read())
 
-    reader = imageio.get_reader(temp)
-    fps = reader.get_meta_data().get('fps', 30)
+        reader = imageio.get_reader(temp)
+        fps = reader.get_meta_data().get('fps', 30)
 
-    out_name = f"{uuid.uuid4().hex}.mp4"
-    out_path = os.path.join(OUTPUT_DIR, out_name)
-    writer = imageio.get_writer(out_path, fps=fps)
+        out_name = f"{uuid.uuid4().hex}.mp4"
+        out_path = os.path.join(OUTPUT_DIR, out_name)
+        writer = imageio.get_writer(out_path, fps=fps)
 
-    seen_potholes = set()
-    seen_plastic = set()
-    seen_litter = set()
+        seen_potholes = set()
+        seen_plastic = set()
+        seen_litter = set()
 
-    for frame in reader:
-        result = model.track(frame, conf=conf, persist=True)[0]
-        annotated = result.plot()
+        frame_skip = 1  # IMPORTANT for free tier
 
-        for box in result.boxes:
-            if box.id is None:
+        for i, frame in enumerate(reader):
+            if i % frame_skip != 0:
                 continue
 
-            obj_id = int(box.id[0])
-            cls = int(box.cls[0])
-            name = model.names[cls].lower()
+            result = model.track(frame, conf=conf, persist=True)[0]
+            annotated = result.plot()
 
-            if name == "pothole":
-                seen_potholes.add(obj_id)
-            elif name == "plastic":
-                seen_plastic.add(obj_id)
-            else:
-                seen_litter.add(obj_id)
+            for box in result.boxes:
+                if box.id is None:
+                    continue
 
-        writer.append_data(cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB))
+                obj_id = int(box.id[0])
+                cls = int(box.cls[0])
+                name = model.names[cls].lower()
 
-    writer.close()
-    reader.close()
-    os.remove(temp)
+                if name == "pothole":
+                    seen_potholes.add(obj_id)
+                elif name == "plastic":
+                    seen_plastic.add(obj_id)
+                else:
+                    seen_litter.add(obj_id)
 
-    return {
-        "video_url": "/outputs/" + out_name,
-        "counts": {
-            "pothole": len(seen_potholes),
-            "plastic": len(seen_plastic),
-            "otherlitter": len(seen_litter)
+            writer.append_data(cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB))
+
+        writer.close()
+        reader.close()
+        os.remove(temp)
+
+        return {
+            "video_url": "/outputs/" + out_name,
+            "counts": {
+                "pothole": len(seen_potholes),
+                "plastic": len(seen_plastic),
+                "otherlitter": len(seen_litter)
+            }
         }
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
