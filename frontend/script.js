@@ -1,7 +1,7 @@
 const imgTab = document.getElementById("imgTab");
 const vidTab = document.getElementById("vidTab");
 const liveTab = document.getElementById("liveTab");
-const BACKEND_URL = "https://civicvision.onrender.com";
+const BACKEND_URL = "";
 
 const imgSec = document.getElementById("image-section");
 const vidSec = document.getElementById("video-section");
