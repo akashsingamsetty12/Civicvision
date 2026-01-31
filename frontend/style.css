@@ -73,6 +73,23 @@ body {
   color: #6b7280;
   cursor: pointer;
   padding-bottom: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tabs button:hover {
+  color: #4f46e5;
+  transform: translateY(-2px);
+}
+
+.tabs button:active {
+  transform: translateY(0);
+}
+
+.tabs button:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 .tabs button.active {
@@ -115,6 +132,18 @@ body {
 .upload-box:hover {
   background: #eef2ff;
   border-color: #6366f1;
+  transform: scale(1.01);
+}
+
+.upload-box:active {
+  transform: scale(0.99);
+  background: #e0e7ff;
+}
+
+.upload-box:focus-within {
+  outline: 3px solid #a5b4fc;
+  outline-offset: 2px;
+  border-color: #4f46e5;
 }
 
 /* ================= SLIDER ================= */
@@ -133,6 +162,64 @@ body {
 
 .slider input {
   flex: 1;
+  cursor: pointer;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+.slider input:hover {
+  background: #d1d5db;
+}
+
+.slider input:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #6a7cff, #7b4fa3);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+}
+
+.slider input::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.5);
+}
+
+.slider input::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+}
+
+.slider input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #6a7cff, #7b4fa3);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+}
+
+.slider input::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.5);
+}
+
+.slider input::-moz-range-thumb:active {
+  transform: scale(1.1);
 }
 
 .slider span {
@@ -157,13 +244,29 @@ body {
 }
 
 .detect-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.4);
+}
+
+.detect-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
+}
+
+.detect-btn:focus {
+  outline: 3px solid #a5b4fc;
+  outline-offset: 3px;
 }
 
 .detect-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
+}
+
+.detect-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 /* ================= RIGHT PANEL ================= */
@@ -187,6 +290,14 @@ body {
   text-align: center;
   font-weight: 600;
   font-size: 14px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
 }
 
 .stat strong {
@@ -205,6 +316,11 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+}
+
+.result-box:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
 }
 
 .result-box img,
@@ -212,6 +328,67 @@ body {
 .result-box canvas {
   max-width: 100%;
   border-radius: 14px;
+  transition: transform 0.3s ease;
+}
+
+.result-box img:hover,
+.result-box video:hover,
+.result-box canvas:hover {
+  transform: scale(1.01);
+  cursor: zoom-in;
+}
+
+/* Selection styles */
+::selection {
+  background: #c7d2fe;
+  color: #1e1b4b;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6a7cff, #7b4fa3);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5a6cef, #6b3f93);
+}
+
+/* Loading animation for buttons */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.detect-btn.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Smooth focus for all interactive elements */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
 }
 
 /* ================= RESPONSIVE ================= */
