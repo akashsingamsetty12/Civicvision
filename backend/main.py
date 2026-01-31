@@ -56,9 +56,10 @@ async def detect_image(file: UploadFile = File(...), conf: float = 0.5):
     try:
         img = np.frombuffer(await file.read(), np.uint8)
         img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+        
         if img is None:
             raise ValueError("Invalid image file")
-
+        img = cv2.resize(img, (640, 640))
         annotated, counts = detect_frame(img, conf)
 
         out_name = f"{uuid.uuid4().hex}.jpg"
@@ -97,26 +98,40 @@ async def detect_video(file: UploadFile = File(...), conf: float = 0.5):
             if i % frame_skip != 0:
                 continue
 
-            result = model.track(frame, conf=conf, persist=True)[0]
-            annotated = result.plot()
+            original = frame.copy()                # keep original size
+            resized = cv2.resize(frame, (640, 640))
+
+            result = model.track(resized, conf=conf, persist=True)[0]
 
             for box in result.boxes:
                 if box.id is None:
                     continue
 
-                obj_id = int(box.id[0])
                 cls = int(box.cls[0])
                 name = model.names[cls].lower()
 
+                # scale boxes back to original size
+                x1, y1, x2, y2 = box.xyxy[0]
+                h, w, _ = original.shape
+
+                x1 = int(x1 * w / 640)
+                x2 = int(x2 * w / 640)
+                y1 = int(y1 * h / 640)
+                y2 = int(y2 * h / 640)
+
+                cv2.rectangle(original, (x1, y1), (x2, y2), (0,255,0), 2)
+                cv2.putText(original, name, (x1, y1-10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+
+        # unique counting
                 if name == "pothole":
-                    seen_potholes.add(obj_id)
+                    seen_potholes.add(int(box.id[0]))
                 elif name == "plastic":
-                    seen_plastic.add(obj_id)
+                    seen_plastic.add(int(box.id[0]))
                 else:
-                    seen_litter.add(obj_id)
+                    seen_litter.add(int(box.id[0]))
 
-            writer.append_data(cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB))
-
+            writer.append_data(cv2.cvtColor(original, cv2.COLOR_BGR2RGB))
         writer.close()
         reader.close()
         os.remove(temp)

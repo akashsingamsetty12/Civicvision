@@ -1,114 +1,117 @@
 
 # CivicVision — Road Defect & Litter Detection System
 
-CivicVision is an end-to-end AI-powered web application for automated detection of road defects and roadside waste using **YOLOv8** deep learning model. The system combines a **FastAPI** backend, responsive **HTML/CSS/JavaScript** frontend, and containerized **Docker** deployment for production-ready infrastructure monitoring.
+An end-to-end AI-powered solution for automated detection and classification of road defects and roadside waste. CivicVision integrates **YOLOv8** deep learning capabilities with a **FastAPI** backend, modern **HTML/CSS/JavaScript** frontend, and containerized **Docker** deployment for seamless production deployment.
 
 ## Detection Capabilities
 
 The system detects and classifies three object categories:
-- **Potholes** — Road surface defects
-- **Plastic waste** — Discarded plastic materials
-- **Roadside litter** — General debris and refuse
+
+- **Potholes** — Road surface defects and structural damage
+- **Plastic Waste** — Single-use plastics and plastic materials
+- **Roadside Litter** — General debris, refuse, and discarded items
 
 ## Core Features
 
-✓ **Image Detection** — Process single images with annotated bounding boxes  
-✓ **Video Detection** — Frame-by-frame analysis with automatic deduplication  
-✓ **Real-time Counting** — Aggregate object counts per detection type  
-✓ **Adjustable Confidence** — Configurable detection thresholds (0.1–1.0)  
-✓ **Output Persistence** — Automatic saving of annotated results
+- **Image Detection** — Process and analyze single images with annotated bounding boxes
+- **Video Detection** — Frame-by-frame analysis with automatic deduplication
+- **Real-time Counting** — Aggregate object counts by detection type
+- **Adjustable Confidence** — Configurable detection thresholds (0.1–1.0)
+- **Output Persistence** — Automatic saving of annotated results
 
-## System architecture
+## System Architecture
 
-```text
+```
 User (Browser)
-	 ↓
-Frontend (HTML/CSS/JS)
-	 ↓
-FastAPI Backend
-	 ↓
+    ↓
+Frontend (HTML/CSS/JavaScript)
+    ↓
+FastAPI REST Backend
+    ↓
 YOLOv8 Model (models/road.pt)
-	 ↓
-Detection Results (Images / Videos)
+    ↓
+Detection Results (Annotated Images/Videos)
 ```
 
-## Project structure
+## Project Structure
 
-```text
+```
 Civicvision/
 ├── backend/
-│   ├── main.py                   # FastAPI backend with YOLOv8 inference
+│   ├── main.py                        # FastAPI application & YOLOv8 inference
 │   └── models/
-│       └── road.pt               # Trained YOLOv8 model
+│       └── road.pt                    # Trained YOLOv8 model (3 classes)
 ├── frontend/
-│   ├── index.html                # Web UI
-│   ├── script.js                 # Frontend JavaScript logic
-│   ├── style.css                 # Styling
-│   └── static/
-│       └── output/               # Saved detection results (images/videos)
+│   ├── index.html                     # Web interface
+│   ├── script.js                      # Frontend client logic
+│   ├── style.css                      # Styling & responsive design
+│   └── static/output/                 # Detection results storage
 ├── training/
-│   ├── data.yaml                 # YOLO dataset configuration
-│   └── finalroaddetection.ipynb  # Google Colab training notebook
-├── Dockerfile                    # Container configuration
-├── requirements.txt              # Python dependencies
-└── README.md
+│   ├── data.yaml                      # YOLO dataset configuration
+│   └── finalroaddetection.ipynb       # Training notebook (Google Colab)
+├── Dockerfile                          # Container configuration
+├── requirements.txt                    # Python dependencies
+└── README.md                           # Documentation
 ```
 
-**Key paths:**
-- Backend app: `backend/main.py`
-- Model file: `backend/models/road.pt`
-- Frontend UI: `frontend/index.html`
-- Detection outputs: `frontend/static/output/`
+**Key Paths:**
+- Backend API: `backend/main.py`
+- Trained Model: `backend/models/road.pt`
+- Web UI: `frontend/index.html`
+- Output Directory: `frontend/static/output/`
 
 ## Model Architecture
 
 The system utilizes a single unified **YOLOv8** model trained on three object classes:
 
-| Class ID | Object Type     | Detection Color |
-|:--------:|-----------------|:---------------:|
-| 0        | Pothole         | Blue            |
-| 1        | Plastic Waste   | Red             |
-| 2        | Other Litter    | Green           |
+| Class ID | Object Type | Bounding Box Color |
+|:--------:|:------------|:------------------:|
+| 0        | Pothole     | Blue               |
+| 1        | Plastic Waste | Red               |
+| 2        | Other Litter | Green              |
 
 ## Training & Model Development
 
-Training was conducted in Google Colab for reproducibility. Repository includes:
-- **Notebook**: `training/finalroaddetection.ipynb` — Complete training pipeline
+Training conducted in Google Colab for reproducibility and GPU acceleration. The repository includes:
+
+- **Notebook**: `training/finalroaddetection.ipynb` — Complete end-to-end training pipeline
 - **Dataset Config**: `training/data.yaml` — YOLO format dataset specification
 
-**Training Configuration:**
-- Framework: Ultralytics YOLOv8
-- Task: Object Detection
-- Epochs: 50
-- Output Model: `backend/models/road.pt`
+### Training Configuration
+- **Framework**: Ultralytics YOLOv8
+- **Task**: Object Detection
+- **Epochs**: 50
+- **Output Model**: `backend/models/road.pt`
 
-## Quick Start (Local Development)
+## Quick Start — Local Development
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.10 or higher
 - pip package manager
 
-### Installation & Execution
+### Installation
 
+1. **Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2) Start the backend
-
+2. **Start the backend server**
 ```bash
 python backend/main.py
 ```
 
-### 3) Open the app
+3. **Access the application**
+```
+http://localhost:8000
+```
 
-- http://localhost:8000
+## Docker Deployment — Production
 
-## Docker Deployment (Production)
-
-### Build & Run
+### Build and Run
 
 ```bash
+# Build the image
 docker build -t civicvision .
 
 # Run container on port 8000
@@ -118,29 +121,28 @@ docker run -p 8000:8000 civicvision
 # Open: http://localhost:8000
 ```
 
-### Custom Port
+### Run on Custom Port
 
 ```bash
-# Run on alternate port (e.g., 8000)
-docker run -p 8000:8000 civicvision
+# Run on alternate port (e.g., 9000)
+docker run -p 9000:8000 civicvision
 # Open: http://localhost:9000
 ```
 
 ## API Reference
 
-### `GET /`
-Returns the web application frontend UI.
+### Detect Objects in Image
 
----
+**Endpoint:** `POST /detect/image`
 
-### `POST /detect/image`
-Detect objects in a single image.
+Processes a single image and returns detection results with object counts.
 
-**Request Parameters:**
-| Parameter    | Type  | Range    | Description              |
-|:-------------|:-----:|:--------:|-------------------------|
-| `file`       | File  | —        | Image file (JPG, PNG)    |
-| `confidence` | Float | 0.1–1.0  | Detection confidence    |
+**Parameters:**
+
+| Parameter | Type | Range | Description |
+|:----------|:----:|:-----:|:------------|
+| `file` | File | — | Image file (JPG, PNG) |
+| `confidence` | Float | 0.1–1.0 | Detection confidence threshold |
 
 **Response Example:**
 ```json
@@ -156,14 +158,18 @@ Detect objects in a single image.
 
 ---
 
-### `POST /detect/video`
-Detect objects across all video frames with automatic tracking deduplication.
+### Detect Objects in Video
 
-**Request Parameters:**
-| Parameter    | Type  | Range    | Description               |
-|:-------------|:-----:|:--------:|---------------------------|
-| `file`       | File  | —        | Video file (MP4, MOV)     |
-| `confidence` | Float | 0.1–1.0  | Detection confidence     |
+**Endpoint:** `POST /detect/video`
+
+Processes video frames with automatic tracking deduplication.
+
+**Parameters:**
+
+| Parameter | Type | Range | Description |
+|:----------|:----:|:-----:|:------------|
+| `file` | File | — | Video file (MP4, MOV) |
+| `confidence` | Float | 0.1–1.0 | Detection confidence threshold |
 
 **Response Example:**
 ```json
@@ -177,40 +183,52 @@ Detect objects across all video frames with automatic tracking deduplication.
 }
 ```
 
+---
+
+### Get Web Interface
+
+**Endpoint:** `GET /`
+
+Returns the frontend web application UI.
+
 ## Technology Stack
 
-| Layer        | Technology              | Purpose                        |
-|:-------------|:------------------------|:-------------------------------|
-| **ML Model** | YOLOv8 (Ultralytics)   | Object detection & inference   |
-| **Backend**  | FastAPI + Uvicorn      | REST API server                |
-| **Frontend** | HTML5, CSS3, JavaScript | User interface                 |
-| **Vision**   | OpenCV                 | Image processing & annotation  |
-| **Video**    | ImageIO + FFmpeg       | Video encoding & processing    |
-| **GPU**      | PyTorch + CUDA         | Accelerated inference          |
-| **Container**| Docker                 | Containerization & deployment  |
-| **Runtime**  | Python 3.10            | Application runtime            |
+| Component | Technology | Purpose |
+|:----------|:-----------|:--------|
+| **ML Model** | YOLOv8 (Ultralytics) | Object detection & inference |
+| **Backend** | FastAPI + Uvicorn | REST API server |
+| **Frontend** | HTML5, CSS3, JavaScript | User interface & client logic |
+| **Vision** | OpenCV | Image processing & annotation |
+| **Video** | ImageIO + FFmpeg | Video encoding & frame processing |
+| **Compute** | PyTorch + CUDA | GPU-accelerated inference |
+| **Containerization** | Docker | Production deployment |
+| **Runtime** | Python 3.10 | Application runtime environment |
 
 ## Performance Optimization
 
-- **GPU Acceleration** — Enable CUDA for 3–5x faster inference (supported)
+- **GPU Acceleration** — Enable CUDA for 3–5x faster inference (NVIDIA GPUs supported)
 - **Confidence Threshold** — Use `confidence ≥ 0.4` to minimize false positives
 - **Video Processing** — Reduce frame skip rate for faster batch processing
-- **Disk Management** — Periodically clear `frontend/static/output/` to maintain disk space
-- **Model Optimization** — FP16 half-precision enabled for GPU inference
+- **Disk Management** — Periodically clear `frontend/static/output/` for optimal storage
+- **Model Optimization** — FP16 half-precision inference enabled for GPU deployment
 
 ## Troubleshooting
 
-### ✗ Model File Not Found
-**Error:** `FileNotFoundError: backend/models/road.pt`  
-**Solution:** Verify model file exists:
+### Model File Not Found
+**Error:** `FileNotFoundError: backend/models/road.pt`
+
+**Solution:** Verify the model file exists:
 ```bash
 ls -la backend/models/road.pt  # Linux/Mac
 dir backend\models\road.pt     # Windows
 ```
 
-### ✗ Port Already in Use
-**Error:** `Address already in use: 0.0.0.0:8000`  
-**Solution:** Use alternative port:
+---
+
+### Port Already in Use
+**Error:** `Address already in use: 0.0.0.0:8000`
+
+**Solution:** Use an alternative port:
 ```bash
 # Docker: Run on port 9000
 docker run -p 9000:8000 civicvision
@@ -218,21 +236,24 @@ docker run -p 9000:8000 civicvision
 # Local: Modify main.py or use environment variable
 ```
 
-### ✗ Docker Not Available
-**Error:** `docker: command not found`  
-**Solution:** Install Docker Desktop from https://www.docker.com/products/docker-desktop
+---
+
+### Docker Not Available
+**Error:** `docker: command not found`
+
+**Solution:** Install Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop)
 
 ## Project Status
 
-| Component              | Status      | Notes                    |
-|:-----------------------|:-----------:|:------------------------:|
-| YOLOv8 Model Training  | ✅ Complete | 50 epochs, 3 classes    |
-| Web Application        | ✅ Complete | Image & video detection |
-| Docker Deployment      | ✅ Complete | Production-ready        |
-| API Documentation      | ✅ Complete | Full REST specification |
-| Demo Readiness         | ✅ Complete | Ready for evaluation    |
+| Component | Status | Notes |
+|:----------|:------:|:------|
+| YOLOv8 Model Training | ✅ Complete | 50 epochs, 3 object classes |
+| Web Application | ✅ Complete | Image & video detection |
+| Docker Deployment | ✅ Complete | Production-ready container |
+| API Documentation | ✅ Complete | Full REST API specification |
+| Demo Readiness | ✅ Complete | Ready for evaluation & deployment |
 
 ## License
 
-This project uses **Ultralytics YOLOv8** under AGPL-3.0 License. For commercial usage, please refer to [Ultralytics Licensing](https://github.com/ultralytics/ultralytics/blob/main/LICENSE) terms and requirements.
+This project utilizes **Ultralytics YOLOv8** under the AGPL-3.0 License. For commercial usage, refer to [Ultralytics Licensing](https://github.com/ultralytics/ultralytics/blob/main/LICENSE) terms and requirements.
 
