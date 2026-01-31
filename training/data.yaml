@@ -1,8 +1,8 @@
-path: /content/datasetfinal
+path: FINALDATA/finaldataedited
 
 train: images/train
+val: images/val
 
-nc: 3
 names:
   0: pothole
   1: plastic
