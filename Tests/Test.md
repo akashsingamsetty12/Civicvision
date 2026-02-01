@@ -25,14 +25,6 @@ The model correctly identified the pothole with high confidence and accurate loc
 
 **Output Image:**
 
-Potholes
-
-Plastic
-
-Other Litter
-
-7
-
 <!-- pothole 0.62 pothole 0.50 pothole 0.89 pothole 0.66 pothole 0.93 pothole 0.87 pothole 0.88 -->
 ![](https://web-api.textin.com/ocr_image/external/3aad573cb42dfcd1.jpg)
 
